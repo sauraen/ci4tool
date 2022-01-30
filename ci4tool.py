@@ -132,6 +132,11 @@ def apply_palette_to_png(p_file, plt):
         return apply_palette_to_im(im, plt)
 
 def palette_to_c(plt, array_name=None, comment=None):
+    '''
+    Writes a C array containing palette data. Optionally writes the array
+    definition (rather than just the contents) if the array name is given, and
+    an optional comment (e.g. for the input filename).
+    '''
     num_colors = len(plt)//4
     assert num_colors <= 16
     ret = ''
@@ -154,8 +159,8 @@ def indexes_to_c(d, array_name=None, comment=None):
     '''
     Writes a C array containing the indexes for a color-indexed image as
     returned by apply_palette_to_im / apply_palette_to_png. Optionally writes
-    the array definition (rather than just the contents), and an optional
-    comment (e.g. for the input filename).
+    the array definition (rather than just the contents) if the array name is
+    given, and an optional comment (e.g. for the input filename).
     '''
     assert (len(d) & 15) == 0
     ret = ''
@@ -203,7 +208,7 @@ if __name__ == '__main__':
         return a
     def show_help():
         print('\nci4tool - Copyright (C) 2022 Sauraen - GPL3 licensed\n' +
-            'Usage: python3 ci4tool [args]\n'
+            'Usage: python3 ci4tool.py [args]\n'
             '-i, --input:    Input PNG file\n'
             '-o, --output:   Output .c / .inc file\n'
             '-p, --palette:  PNG file representing palette (e.g. 16x1)\n'
