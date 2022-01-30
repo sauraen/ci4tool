@@ -37,9 +37,9 @@ Usage: `python3 ci4tool.py [args]`
 - `-i`, `--input`:    Input PNG file
 - `-o`, `--output`:   Output .c / .inc file
 - `-p`, `--palette`:  PNG file representing palette (e.g. 16x1, 4x4)
-- `-c`, `--contents`: Image to generate palette from unique colors used
-- `-m`, `--pltname`:  Name of palette array in C
-- `-n`, `--idxname`:  Name of color-index (image) array in C
+- `-c`, `--contents`: Generate palette from the up to 16 unique colors used in this image
+- `-m`, `--pltname`:  Name of palette array in C (optional, uses filename)
+- `-n`, `--idxname`:  Name of color-index (image) array in C (optional, uses filename)
 - `-x`, `--pltonly`:  Only convert palette, no -i image
 - `-y`, `--nopltc`:   Do not emit palette into output C, only CI array
 

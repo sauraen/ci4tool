@@ -212,9 +212,9 @@ if __name__ == '__main__':
             '-i, --input:    Input PNG file\n'
             '-o, --output:   Output .c / .inc file\n'
             '-p, --palette:  PNG file representing palette (e.g. 16x1)\n'
-            '-c, --contents: Image to generate palette from unique colors used\n'
-            '-m, --pltname:  Name of palette array in C\n'
-            '-n, --idxname:  Name of color-index (image) array in C\n'
+            '-c, --contents: Generate palette from the up to 16 unique colors used in this image\n'
+            '-m, --pltname:  Name of palette array in C (optional, uses filename)\n'
+            '-n, --idxname:  Name of color-index (image) array in C (optional, uses filename)\n'
             '-x, --pltonly:  Only convert palette, no -i image\n'
             '-y, --nopltc:   Do not emit palette into output C, only CI array')
     i = 1
