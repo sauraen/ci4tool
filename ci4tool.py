@@ -148,8 +148,7 @@ def palette_to_c(plt, array_name=None, comment=None):
     for i in range(num_colors):
         val = ((plt[4*i+0] >> 3) << 11) | ((plt[4*i+1] >> 3) << 6) | \
             ((plt[4*i+2] >> 3) << 1) | (plt[4*i+3] >> 7)
-        ret += '0x' + format(val, '04x')
-        if i < num_colors-1: ret += ', '
+        ret += '0x' + format(val, '04x') + ', '
     ret += '\n'
     if array_name is not None:
         ret += '};\n'
@@ -176,8 +175,8 @@ def indexes_to_c(d, array_name=None, comment=None):
             for _ in range(16):
                 ret += format(d[i], 'x')
                 i += 1
-            if i >= len(d): break
             ret += ', '
+            if i >= len(d): break
         ret += '\n'
     if array_name is not None:
         ret += '};\n'
