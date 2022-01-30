@@ -19,11 +19,13 @@ palettes in those textures in the same order.
 
 For modding, we would like to be able to
 - convert any input PNG, including ones using much more than 16 different
-colors, to use a given palette
-- extract the colors used in a PNG with <= 16 colors into a palette, which can
-then be applied to itself or another texture
+  colors, to use a given palette
+- extract the colors used in a PNG with <= 16 colors (i.e. a texture drawn to
+  use only 16 colors, whether saved as RGB / RGBA format or as indexed) into a
+  palette, which can then be applied to itself or another texture
 
-These two features are exactly what ci4tool provides.
+These two features are exactly what ci4tool provides, in both command-line and
+scriptable form.
 
 ## Setup
 
