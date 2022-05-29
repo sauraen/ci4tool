@@ -125,6 +125,7 @@ def apply_palette_to_im(im, plt, dither=False):
             continue
         r, g, b, a = read_px(ib_dither, i)
         bestq, bestscore = find_best_idx(r, g, b)
+        d.append(bestq)
         pr, pg, pb = struct.unpack('BBB', plt[4*bestq:4*bestq+3])
         def adjust_neighbor(px):
             nr, ng, nb, _ = read_px(ib_dither, px)
