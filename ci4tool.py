@@ -86,9 +86,9 @@ def apply_palette_to_im(im, plt, dither=False):
         ib_dither = ib.copy()
     def read_px(data, px):
         if bands == 4:
-            r, g, b, a = struct.unpack('BBBB', ib[bands*px:bands*(px+1)])
+            r, g, b, a = struct.unpack('BBBB', data[bands*px:bands*(px+1)])
         else:
-            r, g, b = struct.unpack('BBB', ib[bands*px:bands*(px+1)])
+            r, g, b = struct.unpack('BBB', data[bands*px:bands*(px+1)])
             a = 255
         return r, g, b, a
     def write_px(data, px, r, g, b):
@@ -124,14 +124,14 @@ def apply_palette_to_im(im, plt, dither=False):
             d.append(bestq)
             continue
         r, g, b, a = read_px(ib_dither, i)
-        bestq, bestscore = find_best_idx(r, g, b)
-        d.append(bestq)
-        pr, pg, pb = struct.unpack('BBB', plt[4*bestq:4*bestq+3])
+        newbestq, _ = find_best_idx(r, g, b)
+        d.append(newbestq)
+        pr, pg, pb = struct.unpack('BBB', plt[4*newbestq:4*newbestq+3])
         def adjust_neighbor(px):
             nr, ng, nb, _ = read_px(ib_dither, px)
             def adjust_value(orig, pcolor, neighbor):
                 ditherfact = 0.5
-                return max(min(neighbor + int((pcolor - orig) * ditherfact), 255), 0)
+                return max(min(neighbor + int((orig - pcolor) * ditherfact), 255), 0)
             nr = adjust_value(r, pr, nr)
             ng = adjust_value(g, pg, ng)
             nb = adjust_value(b, pb, nb)
