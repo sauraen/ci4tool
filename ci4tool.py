@@ -67,33 +67,45 @@ def create_palette_from_im_contents(im):
         raise RuntimeError('Image has ' + str(len(b)//4) + ' colors, max of 16 for CI4')
     return b
 
-def apply_palette_to_im(im, plt):
+def apply_palette_to_im(im, plt, dither=False):
     '''
     Converts an input pillow image to color-indexed / palettized. The input
     palette must come from one of the functions above (i.e. the only palette
-    entry which may have zero alpha is the first one). Each pixel is assigned to
-    the palette entry which is closest to it. Returns a list of palette indexes,
-    one per input pixel.
+    entry which may have zero alpha is the first one). Returns a list of palette
+    indexes, one per input pixel.
+    
+    If not dither, each pixel is assigned to the palette entry which is closest
+    to it. If dither, dithering is applied to produce better average
+    approximations of the original colors.
     '''
     bands = len(im.getbands())
     assert bands in {3, 4}
-    ib = im.tobytes()
+    sx, sy = im.size[0], im.size[1]
+    ib = bytearray(im.tobytes())
+    if dither:
+        ib_dither = ib.copy()
+    def read_px(data, px):
+        if bands == 4:
+            r, g, b, a = struct.unpack('BBBB', ib[bands*px:bands*(px+1)])
+        else:
+            r, g, b = struct.unpack('BBB', ib[bands*px:bands*(px+1)])
+            a = 255
+        return r, g, b, a
+    def write_px(data, px, r, g, b):
+        data[bands*px:bands*px+3] = struct.pack('BBB', r, g, b)
     assert (len(plt) & 3) == 0
     num_colors = len(plt) // 4
     assert num_colors <= 16
     plt_has_alpha = plt[3] == 0
     d = []
     for i in range(len(ib)//bands):
-        if bands == 4:
-            r, g, b, a = struct.unpack('BBBB', ib[bands*i:bands*(i+1)])
-        else:
-            r, g, b = struct.unpack('BBB', ib[bands*i:bands*(i+1)])
-            a = 255
+        r, g, b, a = read_px(ib, i)
         if a < 128:
             if not plt_has_alpha:
                 raise RuntimeError('Need alpha but palette does not have it')
             d.append(0)
-        else:
+            continue
+        def find_best_idx(r, g, b):
             bestscore = 100000000
             bestq = -1
             for q in range(0, num_colors):
@@ -105,7 +117,30 @@ def apply_palette_to_im(im, plt):
                     bestq = q
                     bestscore = score
             assert bestq >= 0 and bestq < num_colors
+            return bestq, bestscore
+        bestq, bestscore = find_best_idx(r, g, b)
+        if not dither or bestscore <= 75:
+            # Don't dither if there is a palette entry close to the original color.
             d.append(bestq)
+            continue
+        r, g, b, a = read_px(ib_dither, i)
+        bestq, bestscore = find_best_idx(r, g, b)
+        pr, pg, pb = struct.unpack('BBB', plt[4*bestq:4*bestq+3])
+        def adjust_neighbor(px):
+            nr, ng, nb, _ = read_px(ib_dither, px)
+            def adjust_value(orig, pcolor, neighbor):
+                ditherfact = 0.5
+                return max(min(neighbor + int((pcolor - orig) * ditherfact), 255), 0)
+            nr = adjust_value(r, pr, nr)
+            ng = adjust_value(g, pg, ng)
+            nb = adjust_value(b, pb, nb)
+            write_px(ib_dither, px, nr, ng, nb)
+        x, y = i % sx, i / sx
+        assert y < sy
+        if x < sx - 1:
+            adjust_neighbor(i+1)
+        if y < sy - 1:
+            adjust_neighbor(i+sx)
     assert len(d) == im.size[0] * im.size[1]
     return d
 
