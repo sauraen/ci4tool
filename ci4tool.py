@@ -67,16 +67,17 @@ def create_palette_from_im_contents(im):
         raise RuntimeError('Image has ' + str(len(b)//4) + ' colors, max of 16 for CI4')
     return b
 
-def apply_palette_to_im(im, plt, dither=False):
+def apply_palette_to_im(im, plt, dither=False, exact=False):
     '''
     Converts an input pillow image to color-indexed / palettized. The input
     palette must come from one of the functions above (i.e. the only palette
     entry which may have zero alpha is the first one). Returns a list of palette
     indexes, one per input pixel.
     
-    If not dither, each pixel is assigned to the palette entry which is closest
-    to it. If dither, dithering is applied to produce better average
-    approximations of the original colors.
+    If exact, each pixel must exactly match a palette entry. If not exact and
+    not dither, each pixel is assigned to the palette entry which is closest to
+    it. If dither, dithering is applied to produce better average approximations
+    of the original colors.
     '''
     bands = len(im.getbands())
     assert bands in {3, 4}
@@ -116,6 +117,8 @@ def apply_palette_to_im(im, plt, dither=False):
                 if score < bestscore:
                     bestq = q
                     bestscore = score
+            if exact and bestscore != 0:
+                raise RuntimeError(f"Image color #{r:02X}{g:02X}{b:02X} at pixel ({i%sx}, {i//sx}) not in palette")
             assert bestq >= 0 and bestq < num_colors
             return bestq, bestscore
         bestq, bestscore = find_best_idx(r, g, b)
@@ -159,13 +162,13 @@ def create_palette_from_png_contents(p_file):
     with Image.open(p_file) as im:
         return create_palette_from_im_contents(im)
 
-def apply_palette_to_png(p_file, plt):
+def apply_palette_to_png(p_file, plt, dither=False, exact=False):
     '''
     Loads a PNG file and converts it to color-indexed. Wrapper for
     apply_palette_to_im.
     '''
     with Image.open(p_file) as im:
-        return apply_palette_to_im(im, plt)
+        return apply_palette_to_im(im, plt, dither, exact)
 
 def palette_to_c(plt, array_name=None, comment=None):
     '''
@@ -221,8 +224,7 @@ def indexes_to_c(d, array_name=None, comment=None):
 if __name__ == '__main__':
     infile, outfile, pltfile, contentsfile = None, None, None, None
     pltname, idxname = None, None
-    pltonly = False
-    nopltc = False
+    pltonly, nopltc, dither, exact = False, False, False, False
     def get_next_arg():
         global i
         if i == len(sys.argv):
@@ -251,7 +253,9 @@ if __name__ == '__main__':
             '-m, --pltname:  Name of palette array in C (optional, uses filename)\n'
             '-n, --idxname:  Name of color-index (image) array in C (optional, uses filename)\n'
             '-x, --pltonly:  Only convert palette, no -i image\n'
-            '-y, --nopltc:   Do not emit palette into output C, only CI array')
+            '-y, --nopltc:   Do not emit palette into output C, only CI array\n'
+            '-d, --dither:   Use dithering when matching colors to palette\n'
+            '-e, --exact:    Error if image contains colors not in palette')
     i = 1
     while i < len(sys.argv):
         arg = sys.argv[i]
@@ -264,14 +268,18 @@ if __name__ == '__main__':
             pltfile = get_file_arg()
         elif arg in {'-c', '--contents'}:
             contentsfile = get_file_arg()
-        elif arg == {'-m', '--pltname'}:
+        elif arg in {'-m', '--pltname'}:
             pltname = get_next_arg()
-        elif arg == {'-n', '--idxname'}:
+        elif arg in {'-n', '--idxname'}:
             idxname = get_next_arg()
         elif arg in {'-x', '--pltonly'}:
             pltonly = True
-        elif arg == {'-y', '--nopltc'}:
+        elif arg in {'-y', '--nopltc'}:
             nopltc = True
+        elif arg in {'-d', '--dither'}:
+            dither = True
+        elif arg in {'-e', '--exact'}:
+            exact = True
         else:
             print('Invalid command-line argument ' + arg)
             show_help()
@@ -327,5 +335,5 @@ if __name__ == '__main__':
         if not nopltc:
             o.write(palette_to_c(plt, pltname, Path(pltsrcfile).name))
         if not pltonly:
-            d = apply_palette_to_png(infile, plt)
+            d = apply_palette_to_png(infile, plt, dither, exact)
             o.write(indexes_to_c(d, idxname, Path(infile).name))
