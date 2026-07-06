@@ -314,16 +314,18 @@ if __name__ == '__main__':
     if not errored:
         if pltname is None:
             pltname = toAlnum(Path(pltsrcfile).stem) + '_plt'
-        else:
-            if pltname != toAlnum(pltname):
-                errored = True
-                print(pltname + ' is not a valid C name')
+        elif pltname == "None":
+            pltname = None
+        elif pltname != toAlnum(pltname):
+            errored = True
+            print(pltname + ' is not a valid C name')
         if idxname is None and not pltonly:
             idxname = toAlnum(Path(infile).stem) + '_ci4'
-        else:
-            if idxname != toAlnum(idxname):
-                errored = True
-                print(idxname + ' is not a valid C name')
+        elif idxname == "None":
+            idxname = None
+        elif idxname != toAlnum(idxname):
+            errored = True
+            print(idxname + ' is not a valid C name')
     if errored:
         show_help()
         sys.exit(1)
